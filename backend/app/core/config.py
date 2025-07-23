@@ -1,20 +1,35 @@
 from pydantic_settings import BaseSettings
 import os
+from passlib.context import CryptContext
+from datetime import datetime, timedelta, timezone
+from jose import JWTError, jwt
+from core.config import settings 
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class Settings(BaseSettings):
-    """
-    Carrega as configurações do projeto a partir de um arquivo .env.
-    """
+   
     PROJECT_NAME: str
     PROJECT_VERSION: str
     SECRET_KEY: str
 
     class Config:
-        # O Pydantic procurará por um arquivo .env na mesma pasta ou em pastas superiores
-        # e o carregará.
         env_file = ".env"
-        env_file_encoding = 'utf-8' # Adicionado para garantir a codificação correta
+        env_file_encoding = 'utf-8' 
 
-# Cria uma instância única das configurações que será usada em todo o projeto.
+
 settings = Settings()
+
+
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30 # O token valerá por 30 minutos
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
 
