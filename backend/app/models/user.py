@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from sqlalchemy import Column, Integer, String, Boolean
+# Importamos a nossa Base centralizada!
+from app.db.base import Base
 
 class User(Base):
+    
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)

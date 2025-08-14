@@ -26,5 +26,21 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def decode_access_token(token: str) -> str | None:
+    """
+    Decodifica o token de acesso para obter o e-mail do utilizador (o 'sub').
+    """
+    try:
+        # Tenta decodificar o token usando a nossa chave secreta
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Extrai o e-mail do campo 'sub' (subject)
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        return email
+    except JWTError:
+        # Se o token for inválido (assinatura errada, expirado, etc.), retorna None
+        return None
+
 
 
