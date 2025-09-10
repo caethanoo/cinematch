@@ -35,6 +35,70 @@ O backend deste projeto foi estruturado seguindo um padrão de **Arquitetura em 
 * **Gerenciamento de Estado:** React Context API / Zustand
 * **Consumo de API:** Axios / Fetch API
 
+
+## ⚙️ Instalação e Configuração
+
+Siga os passos abaixo para configurar e executar o ambiente de desenvolvimento do backend.
+
+**Pré-requisitos:**
+* Python 3.10+
+* Git
+
+**Passo a Passo:**
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/seu-usuario/cinematch-fullstack.git](https://github.com/seu-usuario/cinematch-fullstack.git)
+    ```
+
+2.  **Navegue para a pasta do backend:**
+    ```bash
+    cd cinematch-fullstack/backend
+    ```
+
+3.  **Crie e ative o ambiente virtual:**
+    ```bash
+    # Criar o ambiente
+    python -m venv venv
+
+    # Ativar no Linux/Mac
+    source venv/bin/activate
+
+    # Ativar no Windows
+    .\venv\Scripts\activate
+    ```
+
+4.  **Configure as variáveis de ambiente:**
+    * Copie o ficheiro de exemplo `.env.example` para um novo ficheiro chamado `.env`.
+        ```bash
+        # No Linux/Mac
+        cp .env.example .env
+
+        # No Windows
+        copy .env.example .env
+        ```
+    * Abra o ficheiro `.env` e preencha os valores das variáveis, especialmente a sua `SECRET_KEY` e a `TMDB_API_KEY`.
+
+5.  **Instale as dependências do projeto:**
+    * O comando abaixo irá ler o ficheiro `pyproject.toml` e instalar todas as bibliotecas necessárias (FastAPI, SQLAlchemy, etc.).
+    ```bash
+    pip install -e .
+    ```
+
+## ▶️ Como Executar
+
+Com o ambiente configurado, basta ligar o servidor de desenvolvimento.
+
+1.  **Ligue o servidor Uvicorn:**
+    * Certifique-se de que está na pasta `backend` e que o seu ambiente virtual (`venv`) está ativo.
+    ```bash
+    python -m uvicorn app.main:app --reload
+    ```
+
+2.  **Aceda à aplicação:**
+    * O servidor estará a correr em `http://127.0.0.1:8000`.
+    * A documentação interativa da API (Swagger UI) estará disponível em: **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**.
+
 ##  Roadmap do Projeto
 
 - [ ] Estrutura inicial do projeto e setup do ambiente
