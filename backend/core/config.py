@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str = "0.1.0"
     
     SECRET_KEY: str
+    TMDB_API_KEY : str
 
     DATABASE_URL: str 
 

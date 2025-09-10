@@ -1,1 +1,3 @@
-from .user import User, UserCreate
+from .user import User , UserCreate
+from .swipe import Swipe
+
