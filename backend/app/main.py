@@ -1,34 +1,31 @@
-# Localização: app/main.py
-
-import sys
-from pathlib import Path
-
-# Adiciona o diretório 'backend' ao caminho do Python
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+# Localização: backend/app/main.py
 
 from fastapi import FastAPI
-
-# Importa as nossas rotas e configurações
-from app.api.routes import users
 from core.config import settings
 
-# Importa a Base e o engine da nossa nova estrutura centralizada em 'app/db'
+# --- Configuração da Base de Dados ---
 from app.db.base import Base
 from app.db.session import engine
 
-# --- ESTE É O BLOCO CORRETO PARA CRIAR AS TABELAS ---
-# Ele usa a 'Base' que importámos diretamente para criar as tabelas.
-# Não há mais 'models.Base' aqui.
-Base.metadata.create_all(bind=engine)
-# ----------------------------------------------------
+# --- Roteadores e Descoberta de Modelos ---
+# Ao importar os roteadores abaixo, o Python irá seguir a cadeia de
+# importações (routes -> deps -> crud -> models) e irá "descobrir"
+# todos os nossos modelos (User, Swipe) automaticamente.
+from app.api.routes import users, movies
 
-# Cria a aplicação FastAPI
+# --- Criação das Tabelas ---
+# Agora que os roteadores foram importados e os modelos "descobertos",
+# podemos pedir ao SQLAlchemy para criar todas as tabelas encontradas.
+Base.metadata.create_all(bind=engine)
+
+# --- Criação da Aplicação ---
 app = FastAPI(title=settings.PROJECT_NAME)
 
-# Endpoint raiz para um health check
+# --- Inclusão dos Roteadores ---
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(movies.router, prefix="/movies", tags=["movies"])
+
 @app.get("/")
 def read_root():
+    """Endpoint raiz para verificar se a API está online."""
     return {"message": "Bem-vindo ao CineMatch API!"}
-
-# Inclui as rotas de utilizadores na nossa aplicação
-app.include_router(users.router, prefix="/users", tags=["users"])

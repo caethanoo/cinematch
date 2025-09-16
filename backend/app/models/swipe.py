@@ -12,6 +12,8 @@ class Swipe(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     movie_id = Column(Integer, nullable=False)
     liked = Column(Boolean, nullable=False)
+    
+    user_id = Column(Integer, ForeignKey("users.id"))
 
     # Relacionamento com o usuário (opcional, mas útil)
-    user = relationship("User", back_populates="swipes")
+    owner = relationship("User", back_populates="swipes")
