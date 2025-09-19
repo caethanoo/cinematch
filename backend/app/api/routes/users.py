@@ -34,35 +34,27 @@ async def create_user(user_in: schemas.UserCreate, db: Session = Depends(deps.ge
         )
 
 @router.post("/token")
-def login_for_access_token(
+async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(deps.get_db)
 ):
+    print(f"Tentativa de login para: {form_data.username}")
     """
-    Autentica um utilizador e retorna um token de acesso.
+    OAuth2 compatible token login, get an access token for future requests
     """
-    # Passo 1: Autenticar o utilizador
-    # Usamos o 'username' do formulário para procurar o e-mail na base de dados.
     user = crud.get_user_by_email(db, email=form_data.username)
-
-    # Verificamos se o utilizador existe E se a senha está correta.
     if not user or not security.verify_password(form_data.password, user.hashed_password):
-        # Se não, lançamos um erro.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    # Passo 2: Se a autenticação for bem-sucedida, criar o token JWT.
-    # Colocamos o e-mail do utilizador dentro do token.
-    access_token = security.create_access_token(
-        data={"sub": user.email}
-    )
-
-    # Passo 3: Retornar o token.
-    # O padrão OAuth2 especifica que a resposta deve ser neste formato.
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    access_token = security.create_access_token(data={"sub": user.email})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 @router.get("/me", response_model=schemas.User)
 def read_user_me(
