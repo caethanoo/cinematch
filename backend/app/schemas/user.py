@@ -1,17 +1,15 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, constr
 from typing import Optional
 
 class UserBase(BaseModel):
-    username: str
     email: EmailStr 
-    name : str
-    
+    name: str
+
 class UserCreate(UserBase):
-    password: str   
+    password: str
     
 class User(UserBase):
     id: int
-    name : str
     
     class Config:
         from_attributes = True

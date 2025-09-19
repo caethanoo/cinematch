@@ -2,7 +2,7 @@
 
 import httpx
 from typing import List, Dict, Any
-from core.config import settings
+from app.core.config import settings
 
 TMDB_API_URL = "https://api.themoviedb.org/3"
 
@@ -13,47 +13,40 @@ async def get_popular_movies() -> List[Dict[str, Any]]:
     """
     endpoint = f"{TMDB_API_URL}/movie/popular"
     
-    # --- A CORREÇÃO ESTÁ AQUI ---
-    # Em vez de 'headers', a API v3 espera a chave como um 'param' na URL.
     params = {
         "api_key": settings.TMDB_API_KEY,
-        "language": "pt-BR"
+        "language": "pt-BR",
+        "page": 1
     }
     
     async with httpx.AsyncClient() as client:
         try:
-            # Passamos os parâmetros usando o argumento 'params'
             response = await client.get(endpoint, params=params)
-            response.raise_for_status() # Lança exceção para erros (401, 404, etc.)
+            response.raise_for_status()
             
             data = response.json()
-            return data.get("results", [])
-        except httpx.HTTPStatusError as exc:
-            print(f"Erro de HTTP ao chamar a API do TMDB: {exc.response.status_code}")
+            movies = data.get("results", [])
+            
+            # Log para debug
+            print(f"Status: {response.status_code}")
+            print(f"Filmes encontrados: {len(movies)}")
+            
+            return movies
+        except Exception as e:
+            print(f"Erro: {e}")
             return []
-        except httpx.RequestError as exc:
-            print(f"Ocorreu um erro de rede na requisição para o TMDB: {exc}")
-            return []
-        
-
 
 if __name__ == "__main__":
     import asyncio
-    from pprint import pprint
-
     
     async def main():
-        print("A buscar filmes populares...")
-
-     
+        print("Buscando filmes populares...")
         filmes = await get_popular_movies()
-
-        if filmes:
-            print(f"Encontrados {len(filmes)} filmes.")
-            print("Aqui está o primeiro:")
-            pprint(filmes[0]) # Agora 'filmes' é uma lista de verdade!
-        else:
-            print("Nenhum filme encontrado ou ocorreu um erro.")
-
-   
+        
+        for filme in filmes[:5]:  # Mostra apenas os 5 primeiros
+            print("\n" + "="*50)
+            print(f"Título: {filme['title']}")
+            print(f"Nota: {filme['vote_average']}")
+            print(f"Data de Lançamento: {filme['release_date']}")
+    
     asyncio.run(main())

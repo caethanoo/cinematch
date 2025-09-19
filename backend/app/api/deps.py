@@ -5,7 +5,7 @@ from jose import JWTError
 
 from app.db.session import SessionLocal
 from app import crud, models
-from core import security
+from app.core.config import settings
 
 # Esta linha cria um "esquema" de segurança.
 # Ela diz ao FastAPI: "Para te autenticares, espero um token na URL '/users/token'".

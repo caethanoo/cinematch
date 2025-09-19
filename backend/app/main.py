@@ -1,27 +1,25 @@
 # Localização: backend/app/main.py
 
 from fastapi import FastAPI
-from core.config import settings
+from app.core.config import settings  # Corrigido o caminho de importação
 
 # --- Configuração da Base de Dados ---
 from app.db.base import Base
 from app.db.session import engine
 
-# --- Roteadores e Descoberta de Modelos ---
-# Ao importar os roteadores abaixo, o Python irá seguir a cadeia de
-# importações (routes -> deps -> crud -> models) e irá "descobrir"
-# todos os nossos modelos (User, Swipe) automaticamente.
+# --- Roteadores ---
 from app.api.routes import users, movies
 
-# --- Criação das Tabelas ---
-# Agora que os roteadores foram importados e os modelos "descobertos",
-# podemos pedir ao SQLAlchemy para criar todas as tabelas encontradas.
+# Criar tabelas
 Base.metadata.create_all(bind=engine)
 
-# --- Criação da Aplicação ---
-app = FastAPI(title=settings.PROJECT_NAME)
+# Criar app
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.PROJECT_VERSION
+)
 
-# --- Inclusão dos Roteadores ---
+# Incluir routers
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(movies.router, prefix="/movies", tags=["movies"])
 
