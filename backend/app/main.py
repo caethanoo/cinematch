@@ -1,7 +1,8 @@
 # Localização: backend/app/main.py
 
 from fastapi import FastAPI
-from fastapi.security import HTTPBearer # Mantenha esta importação (apesar de não a usar diretamente no app, é boa prática para indicar intenção)
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from app.core.config import settings
 
 # --- Configuração da Base de Dados ---
@@ -14,36 +15,55 @@ from app.api.routes import users, movies
 # --- Criação das Tabelas ---
 Base.metadata.create_all(bind=engine)
 
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=settings.PROJECT_NAME,
+        version=settings.PROJECT_VERSION,
+        description="API do CineMatch",
+        routes=app.routes,
+    )
+    
+    # Definindo o esquema de segurança JWT
+    openapi_schema["components"]["securitySchemes"] = {
+        "Bearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Digite seu token JWT"
+        }
+    }
+    
+    # Aplicando segurança globalmente
+    openapi_schema["security"] = [{"Bearer": []}]
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
 # --- Criação da Aplicação ---
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    # Você pode querer adicionar um `version` no config.py e usá-lo aqui, ex: version=settings.PROJECT_VERSION
-    # openapi_tags é opcional, mas ajuda a organizar a documentação
+    version=settings.PROJECT_VERSION,
+    description="API para o aplicativo CineMatch",
     openapi_tags=[
-        {
-            "name": "users",
-            "description": "Operations with users.",
-        },
-        {
-            "name": "movies",
-            "description": "Operations with movies.",
-        },
-    ],
-    # openapi_extra é a chave para forçar o Swagger UI a mostrar a opção "Bearer"
-    openapi_extra={
-        "security": [{"Bearer": []}], # Indica que as rotas esperam um esquema de segurança chamado "Bearer"
-        "components": {
-            "securitySchemes": {
-                "Bearer": { # Define o esquema de segurança "Bearer"
-                    "type": "http",
-                    "scheme": "bearer",
-                    "bearerFormat": "JWT",
-                    "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
-                }
-            }
-        }
-    }
+        {"name": "users", "description": "Operações com usuários"},
+        {"name": "movies", "description": "Operações com filmes"},
+    ]
 )
+
+# Configuração de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Atribuindo o schema personalizado
+app.openapi = custom_openapi
 
 # --- Inclusão dos Roteadores ---
 app.include_router(users.router, prefix="/users", tags=["users"])

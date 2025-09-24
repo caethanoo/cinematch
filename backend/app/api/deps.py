@@ -1,22 +1,20 @@
 # Localização: backend/app/api/deps.py
 
-from typing import Generator
+from typing import Generator, Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer # <--- DEVE ESTAR AQUI!
+from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from pydantic import ValidationError
 from sqlalchemy.orm import Session
-
-from app import models, schemas
+from app import models
+from app.core.config import settings
+from app.core.security import ALGORITHM
 from app.db.session import SessionLocal
-from app.core import security # Certifique-se que é app.core
-from app.core.config import settings # Certifique-se que é app.core
 
 # Definimos o OAuth2PasswordBearer aqui, com o tokenUrl correto e relativo
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="users/token",
-    scheme_name="JWT"  # Nome que aparecerá no Swagger UI
-) # <--- AQUI ESTÁ A CHAVE!
+    scheme_name="Bearer"
+)
 
 def get_db() -> Generator:
     try:
@@ -25,33 +23,37 @@ def get_db() -> Generator:
     finally:
         db.close()
 
-def get_current_user(
+async def get_current_user(
     db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme) # O token é injetado pelo OAuth2PasswordBearer
+    token: str = Depends(oauth2_scheme)
 ) -> models.User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
-        # Decodifica o token JWT
+        # Adicione log para debug
+        print(f"Tentando decodificar token: {token[:10]}...")
+        
         payload = jwt.decode(
             token,
-            settings.SECRET_KEY, # A SECRET_KEY do seu config.py
-            algorithms=[security.ALGORITHM],
-            options={"verify_aud": False} # Pode ser necessário ajustar se tiver AUD
+            settings.SECRET_KEY,
+            algorithms=[ALGORITHM]
         )
-        # O 'sub' (subject) deve ser o e-mail do utilizador
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = schemas.TokenData(username=username)
-    except (JWTError, ValidationError):
-        raise credentials_exception
-
-    # Busca o utilizador na base de dados
-    user = db.query(models.User).filter(models.User.email == token_data.username).first()
-    if user is None:
-        raise credentials_exception
-    return user
+        
+        print(f"Payload decodificado: {payload}")
+        
+        email: str = payload.get("sub")
+        if not email:
+            raise JWTError("Email não encontrado no token")
+            
+        # Busca usuário no banco
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if not user:
+            raise JWTError("Usuário não encontrado")
+            
+        return user
+        
+    except JWTError as e:
+        print(f"Erro ao validar token: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Não foi possível validar credenciais: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

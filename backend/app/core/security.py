@@ -1,46 +1,72 @@
 #aqui nesse arquivo eu vou gerir as senhas e gerir sessões
-from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
+from datetime import datetime, timedelta, UTC
 from passlib.context import CryptContext
-from .config import settings
+from jose import jwt, JWTError
+from app.core.config import settings
+from fastapi import HTTPException, status
 
+# Configuração do contexto de senha
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-ACESS_TOKEN_EXPIRE_MINUTES: int = 30
+# Constantes
 ALGORITHM = "HS256"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifica se a senha em texto corresponde ao hash"""
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
+    """Gera um hash para a senha"""
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict) -> str:
+    """Cria um token JWT"""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now() + expires_delta
-    else:
-        expire = datetime.now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    
+    # Adicione log para debug
+    print(f"Gerando token com payload: {to_encode}")
+    
+    encoded_jwt = jwt.encode(
+        to_encode, 
+        settings.SECRET_KEY, 
+        algorithm=ALGORITHM
+    )
     return encoded_jwt
 
-def decode_access_token(token: str) -> str | None:
+def decode_access_token(token: str) -> str:
     """
-    Decodifica o token de acesso para obter o e-mail do utilizador (o 'sub').
+    Decodifica o token de acesso JWT.
+    Raises:
+        HTTPException: Se o token for inválido ou expirado
     """
     try:
-        # Tenta decodificar o token usando a nossa chave secreta
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        # Extrai o e-mail do campo 'sub' (subject)
+        # Log para debug
+        print(f"Tentando decodificar token: {token[:10]}...")
+        
+        payload = jwt.decode(
+            token, 
+            settings.SECRET_KEY, 
+            algorithms=[ALGORITHM]
+        )
+        
         email: str = payload.get("sub")
         if email is None:
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
         return email
-    except JWTError:
-        # Se o token for inválido (assinatura errada, expirado, etc.), retorna None
-        return None
+        
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Erro na validação do token: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 
