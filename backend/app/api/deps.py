@@ -2,7 +2,7 @@
 
 from typing import Generator, Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from app import models
@@ -10,10 +10,10 @@ from app.core.config import settings
 from app.core.security import ALGORITHM
 from app.db.session import SessionLocal
 
-# Definimos o OAuth2PasswordBearer aqui, com o tokenUrl correto e relativo
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="users/token",
-    scheme_name="Bearer"
+security = HTTPBearer(
+    scheme_name="Bearer",
+    description="Digite 'Bearer' seguido do seu token JWT",
+    auto_error=True
 )
 
 def get_db() -> Generator:
@@ -25,35 +25,48 @@ def get_db() -> Generator:
 
 async def get_current_user(
     db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> models.User:
+    """
+    Valida o token JWT e retorna o usuário atual.
+    
+    Raises:
+        HTTPException: Se o token for inválido ou o usuário não existir
+    """
     try:
-        # Adicione log para debug
-        print(f"Tentando decodificar token: {token[:10]}...")
+        # Extrai o token das credenciais
+        token = credentials.credentials
         
+        # Decodifica o token
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
             algorithms=[ALGORITHM]
         )
         
-        print(f"Payload decodificado: {payload}")
-        
+        # Extrai o email do token
         email: str = payload.get("sub")
-        if not email:
-            raise JWTError("Email não encontrado no token")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido - email não encontrado",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
             
-        # Busca usuário no banco
+        # Busca o usuário no banco
         user = db.query(models.User).filter(models.User.email == email).first()
-        if not user:
-            raise JWTError("Usuário não encontrado")
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuário não encontrado",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
             
         return user
         
     except JWTError as e:
-        print(f"Erro ao validar token: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Não foi possível validar credenciais: {str(e)}",
+            detail=f"Erro na validação do token: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
