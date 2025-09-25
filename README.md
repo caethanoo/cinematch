@@ -48,7 +48,7 @@ Siga os passos abaixo para configurar e executar o ambiente de desenvolvimento d
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/seu-usuario/cinematch-fullstack.git](https://github.com/seu-usuario/cinematch-fullstack.git)
+    git clone https://github.com/caethanoo/cinematch
     ```
 
 2.  **Navegue para a pasta do backend:**
