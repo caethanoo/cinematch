@@ -1,7 +1,7 @@
 # Localização: app/services/tmdb.py
 
-import httpx
 from typing import List, Dict, Any
+import httpx
 from app.core.config import settings
 
 TMDB_API_URL = "https://api.themoviedb.org/3"
@@ -34,6 +34,74 @@ async def get_popular_movies() -> List[Dict[str, Any]]:
             return movies
         except Exception as e:
             print(f"Erro: {e}")
+            return []
+
+async def get_movie_details(movie_id: int) -> Dict[str, Any]:
+    """
+    Busca detalhes de um filme específico na API do TMDB.
+    """
+    endpoint = f"{TMDB_API_URL}/movie/{movie_id}"
+    
+    # Corrigido: Usando api_key como parâmetro de query
+    params = {
+        "api_key": settings.TMDB_API_KEY,
+        "language": "pt-BR"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(endpoint, params=params)
+            
+            # Debug log
+            print(f"Status: {response.status_code}")
+            print(f"URL: {response.url}")
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            return {
+                "id": data["id"],
+                "title": data["title"],
+                "overview": data.get("overview", ""),
+                "poster_path": data.get("poster_path"),
+                "release_date": data.get("release_date"),
+                "vote_average": data.get("vote_average"),
+                "genres": [genre["name"] for genre in data.get("genres", [])],
+                "runtime": data.get("runtime")
+            }
+            
+        except httpx.HTTPStatusError as e:
+            print(f"Erro na requisição: {str(e)}")
+            raise ValueError(f"Erro ao buscar filme: {str(e)}")
+        except Exception as e:
+            print(f"Erro inesperado: {e}")
+            raise ValueError(f"Erro inesperado: {e}")
+
+async def get_genres() -> List[dict]:
+    """
+    Busca lista de gêneros disponíveis na API do TMDB.
+    """
+    endpoint = f"{TMDB_API_URL}/genre/movie/list"
+    
+    headers = {
+        "Authorization": f"Bearer {settings.TMDB_API_KEY}",
+        "accept": "application/json"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                endpoint,
+                headers=headers,
+                params={"language": "pt-BR"}
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            return data.get("genres", [])
+            
+        except Exception as e:
+            print(f"Erro ao buscar gêneros: {e}")
             return []
 
 if __name__ == "__main__":
