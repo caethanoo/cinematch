@@ -66,3 +66,21 @@ def read_user_me(
     # A magia acontece na linha acima. Se o código chegar até aqui,
     # significa que o token é válido e o 'current_user' já foi carregado.
     return current_user
+
+@router.put("/me", response_model=schemas.User)
+async def update_user_me(
+    user_update: schemas.UserUpdate,
+    current_user = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """Atualiza dados do usuário atual"""
+    return crud.update_user(db, current_user.id, user_update)
+
+@router.put("/me/preferences", response_model=schemas.User)
+async def update_user_preferences(
+    preferences: schemas.UserPreferences,
+    current_user = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """Atualiza preferências do usuário"""
+    return crud.update_preferences(db, current_user.id, preferences)

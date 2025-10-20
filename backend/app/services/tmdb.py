@@ -104,6 +104,27 @@ async def get_genres() -> List[dict]:
             print(f"Erro ao buscar gêneros: {e}")
             return []
 
+async def search_movies(query: str, genre_id: int = None, page: int = 1) -> dict:
+    """
+    Busca filmes por título e opcionalmente filtra por gênero
+    """
+    endpoint = f"{TMDB_API_URL}/search/movie"
+    
+    params = {
+        "api_key": settings.TMDB_API_KEY,
+        "language": "pt-BR",
+        "query": query,
+        "page": page
+    }
+    
+    if genre_id:
+        params["with_genres"] = genre_id
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(endpoint, params=params)
+        response.raise_for_status()
+        return response.json()
+
 if __name__ == "__main__":
     import asyncio
     

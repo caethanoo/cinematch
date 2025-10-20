@@ -9,11 +9,9 @@ class Swipe(Base):
     __tablename__ = "swipes"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    movie_id = Column(Integer, nullable=False)
-    liked = Column(Boolean, nullable=False)
-    
     user_id = Column(Integer, ForeignKey("users.id"))
+    movie_id = Column(Integer)
+    liked = Column(Boolean)
 
-    # Relacionamento com o usuário (opcional, mas útil)
-    owner = relationship("User", back_populates="swipes")
+    # Relacionamento com User
+    user = relationship("User", back_populates="swipes")

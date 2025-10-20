@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any
 from app.api import deps
-from app.services.tmdb import get_popular_movies, get_movie_details
+from app.services.tmdb import get_popular_movies, get_movie_details, search_movies as tmdb_search_movies
 from app.schemas.movie import MovieDetail
 
 router = APIRouter()
@@ -53,4 +53,23 @@ async def get_movie(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar filme: {str(e)}"
+        )
+
+@router.get("/search")
+async def search_movies(
+    query: str,
+    genre_id: int = None,
+    page: int = 1,
+    current_user = Depends(deps.get_current_user)
+):
+    """
+    Busca filmes por título e opcionalmente filtra por gênero
+    """
+    try:
+        results = await tmdb_search_movies(query, genre_id, page)
+        return results
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro na busca: {str(e)}"
         )

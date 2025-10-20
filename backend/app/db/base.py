@@ -1,4 +1,7 @@
 # Localização: app/db/base.py
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
+from app.models.user import User
+from app.models.swipe import Swipe

@@ -1,8 +1,7 @@
 # Localização: backend/app/schemas/user.py
 
 from pydantic import BaseModel, EmailStr
-from typing import Optional # Mantenha se estiver a ser usado, caso contrário pode remover
-# constr não está a ser usado nos schemas que me enviou, pode remover se não o for usar.
+from typing import List, Optional
 
 # --- Schemas de Utilizador ---
 class UserBase(BaseModel):
@@ -12,9 +11,20 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserPreferences(BaseModel):
+    favorite_genres: List[int] = []
+    language: str = "pt-BR"
+    adult_content: bool = False
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    preferences: Optional[UserPreferences] = None
+
 class User(UserBase):
     id: int
     is_active: bool = True # Geralmente os utilizadores são ativos por padrão
+    preferences: Optional[UserPreferences] = None
 
     class Config:
         from_attributes = True # updated from orm_mode = True
@@ -26,5 +36,4 @@ class Token(BaseModel):
     token_type: str = "bearer" # "bearer" é o tipo padrão de token JWT
 
 class TokenData(BaseModel):
-    # 'username' é muitas vezes o email quando se usa OAuth2PasswordBearer
-    username: str | None = None
+    email: Optional[str] = None

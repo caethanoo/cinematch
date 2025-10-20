@@ -1,27 +1,25 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app import crud, schemas
+from typing import List
+from app.schemas.swipe import SwipeCreate, SwipeInDB  # Importação direta
 from app.api import deps
+from app import crud
 
 router = APIRouter()
 
-@router.get("/")
-async def get_swipes(
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
-):
-    """
-    Recupera os swipes do usuário atual
-    """
-    return {"message": "Endpoint de swipes funcionando"}
-
-@router.post("/")
+@router.post("/", response_model=SwipeInDB)  # Usando importação direta
 async def create_swipe(
-    swipe: schemas.SwipeCreate,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    swipe: SwipeCreate,
+    current_user = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
 ):
-    """
-    Cria um novo swipe para o usuário atual
-    """
-    return {"message": "Swipe criado com sucesso"}
+    """Registra um novo swipe (like/dislike) em um filme"""
+    return crud.create_swipe(db, swipe, current_user.id)
+
+@router.get("/", response_model=List[SwipeInDB])
+async def read_swipes(
+    current_user = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """Lista todos os swipes do usuário atual"""
+    return crud.get_user_swipes(db, current_user.id)
